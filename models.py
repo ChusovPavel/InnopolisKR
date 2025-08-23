@@ -1,0 +1,135 @@
+from dataclasses import dataclass, field, asdict
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+#описаны основные классы и функции
+class BaseModel:
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]):
+        return cls(**data)
+
+    def validate(self) -> None:
+        # Полиморфный метод — реализуется в наследниках
+        pass
+
+
+@dataclass
+class Customer(BaseModel):
+    id: Optional[int] = None
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+    city: str = ""
+    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+
+    def validate(self) -> None:
+        # Инкапсуляция: валидация внутри модели
+        import re
+        email_re = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+        phone_re = re.compile(r"^\+?\d[\d\s\-()]{7,}$")
+        if self.email and not email_re.match(self.email):
+            raise ValueError("Некорректный email")
+        if self.phone and not phone_re.match(self.phone):
+            raise ValueError("Некорректный номер телефона")
+        if not self.name:
+            raise ValueError("Имя клиента обязательно")
+
+
+@dataclass
+class Product(BaseModel):
+    id: Optional[int] = None
+    name: str = ""
+    price: float = 0.0
+    sku: str = ""
+    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+
+    def validate(self) -> None:
+        if not self.name:
+            raise ValueError("Название товара обязательно")
+        if self.price < 0:
+            raise ValueError("Цена не может быть отрицательной")
+
+
+@dataclass
+class OrderItem(BaseModel):
+    id: Optional[int] = None
+    order_id: Optional[int] = None
+    product_id: int = 0
+    quantity: int = 1
+    price: float = 0.0  # Цена на момент заказа
+    subtotal: float = 0.0
+
+    def validate(self) -> None:
+        if self.quantity <= 0:
+            raise ValueError("Количество должно быть > 0")
+        if self.price < 0:
+            raise ValueError("Цена не может быть отрицательной")
+        if self.subtotal != round(self.quantity * self.price, 2):
+            # Автоисправление, демонстрация инкапсуляции
+            self.subtotal = round(self.quantity * self.price, 2)
+
+
+@dataclass
+class Order(BaseModel):
+    id: Optional[int] = None
+    customer_id: int = 0
+    date: str = field(default_factory=lambda: datetime.utcnow().date().isoformat())
+    status: str = "new"
+    total: float = 0.0
+    items: List[OrderItem] = field(default_factory=list)
+
+    def validate(self) -> None:
+        if not self.customer_id:
+            raise ValueError("customer_id обязателен")
+        if not self.items:
+            raise ValueError("Заказ должен содержать хотя бы один товар")
+        for it in self.items:
+            it.validate()
+        calc_total = round(sum(i.subtotal for i in self.items), 2)
+        if self.total != calc_total:
+            self.total = calc_total
+
+
+#YES
+def quicksort_orders(orders: List[Order], key=lambda o: o.date, reverse: bool = False) -> List[Order]:
+    """
+    реализация алгоритма сортировки “быстрая сортировка” (quicksort), который принимает список объектов `Order` и сортирует
+    его по определенному ключу (например, по дате или по общему итогу заказа).
+    :param orders: список который нужно отсортировать
+    :param key: функция, которая для каждого объекта возвращает значение для сравнения. По умолчанию сортировка по дате.
+    :param reverse: если True итоговый список переворачивается
+    :return: Возвращает отсортированный (или обратный при `reverse=True`) список объектов `Order`
+    """
+    if len(orders) <= 1:
+        return orders[:]
+    pivot = orders[len(orders) // 2]
+    pivot_key = key(pivot)
+    left = [o for o in orders if key(o) < pivot_key]
+    middle = [o for o in orders if key(o) == pivot_key]
+    right = [o for o in orders if key(o) > pivot_key]
+    result = quicksort_orders(left, key) + middle + quicksort_orders(right, key)
+    return list(reversed(result)) if reverse else result
+
+
+# Полиморфизм на примере форматирования для экспорта
+class Exportable:
+    def export(self) -> Dict[str, Any]:
+        # Может быть переопределено наследниками
+        return self.to_dict()  # type: ignore
+
+
+class ExportableCustomer(Customer, Exportable):
+    def export(self) -> Dict[str, Any]:
+        d = super().export()
+        d["type"] = "customer"
+        return d
+
+
+class ExportableProduct(Product, Exportable):
+    def export(self) -> Dict[str, Any]:
+        d = super().export()
+        d["type"] = "product"
+        return d
