@@ -1,4 +1,3 @@
-# main.py
 import os
 from gui import App
 import db

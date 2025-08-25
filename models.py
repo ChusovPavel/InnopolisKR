@@ -5,19 +5,33 @@ from typing import List, Dict, Any, Optional
 #описаны основные классы и функции
 class BaseModel:
     def to_dict(self) -> Dict[str, Any]:
+        """
+        Преобразует экземпляр класса в словарь с помощью
+        Returns: словарь
+        """
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]):
+        """
+        Создает новый экземпляр класса из словаря данных.
+        """
         return cls(**data)
 
     def validate(self) -> None:
-        # Полиморфный метод — реализуется в наследниках
+        """
+        Полиморфный метод — реализуется в наследниках, предназначен для корректности  данных, в базовом классе пуст
+        """
         pass
 
 
 @dataclass
 class Customer(BaseModel):
+    """
+    Представляет клиента:
+    - Поля включают ID, имя, email, телефон, город, дату создания.
+    - Метод `validate()` проверяет корректность email и номера телефона с помощью регулярных выражений, а также обязательность имени.
+    """
     id: Optional[int] = None
     name: str = ""
     email: str = ""
@@ -26,7 +40,10 @@ class Customer(BaseModel):
     created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
     def validate(self) -> None:
-        # Инкапсуляция: валидация внутри модели
+        """
+        Проверяет корректность email и номера телефона с помощью регулярных выражений, а также обязательность имени
+        Демонстрация инкапсуляции: валидация внутри модели
+        """
         import re
         email_re = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
         phone_re = re.compile(r"^\+?\d[\d\s\-()]{7,}$")
@@ -40,6 +57,10 @@ class Customer(BaseModel):
 
 @dataclass
 class Product(BaseModel):
+    """
+    Представляет товар:
+    Поля: ID, название, цена, артикул (SKU), дата создания.
+    """
     id: Optional[int] = None
     name: str = ""
     price: float = 0.0
@@ -47,6 +68,9 @@ class Product(BaseModel):
     created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
     def validate(self) -> None:
+        """
+        Проверяет наличие названия и что цена не отрицательная.
+        """
         if not self.name:
             raise ValueError("Название товара обязательно")
         if self.price < 0:
@@ -55,6 +79,10 @@ class Product(BaseModel):
 
 @dataclass
 class OrderItem(BaseModel):
+    """
+    Представляет позицию заказа:
+    Поля: ID, ID заказа, ID продукта, количество, цена, сумма.
+    """
     id: Optional[int] = None
     order_id: Optional[int] = None
     product_id: int = 0
@@ -63,6 +91,9 @@ class OrderItem(BaseModel):
     subtotal: float = 0.0
 
     def validate(self) -> None:
+        """
+        Проверяет что количество > 0, цена не отрицательна, и рассчитывает сумму
+        """
         if self.quantity <= 0:
             raise ValueError("Количество должно быть > 0")
         if self.price < 0:
@@ -74,6 +105,10 @@ class OrderItem(BaseModel):
 
 @dataclass
 class Order(BaseModel):
+    """
+    Представляет заказ:
+    Поля:ID, ID клиента, дата, статус, общий итог, список позиций заказа.
+    """
     id: Optional[int] = None
     customer_id: int = 0
     date: str = field(default_factory=lambda: datetime.utcnow().date().isoformat())
@@ -82,6 +117,9 @@ class Order(BaseModel):
     items: List[OrderItem] = field(default_factory=list)
 
     def validate(self) -> None:
+        """
+        Проверяет наличие клиента, наличие хотя бы одной позиции заказа
+        """
         if not self.customer_id:
             raise ValueError("customer_id обязателен")
         if not self.items:
@@ -96,9 +134,9 @@ class Order(BaseModel):
 #YES
 def quicksort_orders(orders: List[Order], key=lambda o: o.date, reverse: bool = False) -> List[Order]:
     """
-    реализация алгоритма сортировки “быстрая сортировка” (quicksort), который принимает список объектов `Order` и сортирует
+    Реализация алгоритма сортировки “быстрая сортировка” (quicksort), который принимает список объектов `Order` и сортирует
     его по определенному ключу (например, по дате или по общему итогу заказа).
-    :param orders: список который нужно отсортировать
+    :param orders: Список, который нужно отсортировать
     :param key: функция, которая для каждого объекта возвращает значение для сравнения. По умолчанию сортировка по дате.
     :param reverse: если True итоговый список переворачивается
     :return: Возвращает отсортированный (или обратный при `reverse=True`) список объектов `Order`
@@ -116,12 +154,20 @@ def quicksort_orders(orders: List[Order], key=lambda o: o.date, reverse: bool = 
 
 # Полиморфизм на примере форматирования для экспорта
 class Exportable:
+    """
+    Предложение для наследников реализовать метод `export()`, который возвращает словарь для экспорта.
+    """
     def export(self) -> Dict[str, Any]:
-        # Может быть переопределено наследниками
+        """
+        Может быть переопределено наследниками
+        """
         return self.to_dict()  # type: ignore
 
 
 class ExportableCustomer(Customer, Exportable):
+    """
+    Наследование от соответствующих моделей и `Exportable`.
+    """
     def export(self) -> Dict[str, Any]:
         d = super().export()
         d["type"] = "customer"
@@ -129,6 +175,9 @@ class ExportableCustomer(Customer, Exportable):
 
 
 class ExportableProduct(Product, Exportable):
+    """
+    Наследования от соответствующих моделей и `Exportable`.
+    """
     def export(self) -> Dict[str, Any]:
         d = super().export()
         d["type"] = "product"

@@ -236,8 +236,15 @@ def get_orders(db_path: str,date_from: Optional[str] = None,date_to: Optional[st
         cur.execute(q, params)
         return [dict(row) for row in cur.fetchall()]
 
-
+#YES
 def get_order_items(db_path: str, order_id: int) -> List[Dict[str, Any]]:
+    """
+    Функция для отображения деталей заказа
+    Args:
+        db_path: Путь к базе данных
+        order_id: id заказа
+    Returns: словарь с артикулом, суммой и названием товаров в заказе
+    """
     with connect(db_path) as con:
         cur = con.cursor()
         cur.execute(
@@ -253,7 +260,15 @@ def get_order_items(db_path: str, order_id: int) -> List[Dict[str, Any]]:
 
 
 # Импорт/экспорт CSV / JSON
+#YES
 def export_to_csv(db_path: str, folder: str) -> None:
+    """
+    Функция экспорта базы данных в .csv
+    Args:
+        db_path: путь к БД
+        folder: путь для сохранения .csv
+    Returns: файлы .csv
+    """
     os.makedirs(folder, exist_ok=True)
     with connect(db_path) as con:
         cur = con.cursor()
@@ -272,13 +287,20 @@ def export_to_csv(db_path: str, folder: str) -> None:
                 for r in rows:
                     w.writerow(dict(r))
 
-
+#YES
 def import_from_csv(db_path: str, folder: str, clear_before: bool = False) -> None:
+    """
+    Функция импорта файлов .csv в бузу данных
+    Args:
+        db_path: путь к БД
+        folder: папка в которой находятся csv файлы
+        clear_before: флаг для очистки базы данных, не очищать по умолчанию
+    """
     with connect(db_path) as con:
         cur = con.cursor()
-        if clear_before:
+        if clear_before:# очистка базы данных по необходимости
             cur.executescript("DELETE FROM order_items; DELETE FROM orders; DELETE FROM products; DELETE FROM customers;")
-        for t in ["customers", "products", "orders", "order_items"]:
+        for t in ["customers", "products", "orders", "order_items"]:# для каждой таблицы формируем путь, преобразование
             path = os.path.join(folder, f"{t}.csv")
             if not os.path.exists(path):
                 continue
@@ -294,8 +316,15 @@ def import_from_csv(db_path: str, folder: str, clear_before: bool = False) -> No
                 # Попробуем сохранить указанное id, если оно есть
                 cur.executemany(f"INSERT OR REPLACE INTO {t} ({col_list}) VALUES ({placeholders})", values)
 
-
+#YES
 def export_to_json(db_path: str, path: str) -> None:
+    """
+    Функция экспорта базы данных в .json
+    Args:
+        db_path: Путь к базе данных
+        path: путь для сохранения .json
+    Returns: файл .json в виде словарей, где кажды словарь это таблица
+    """
     with connect(db_path) as con:
         cur = con.cursor()
         data = {}
@@ -305,8 +334,15 @@ def export_to_json(db_path: str, path: str) -> None:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-
+#YES
 def import_from_json(db_path: str, path: str, clear_before: bool = False) -> None:
+    """
+    Функция импорта базы из файл .json
+    Args:
+        db_path: путь к базе данных
+        path: путь к файлу .json
+        clear_before: флаг для очистки текущей базы данных
+    """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     with connect(db_path) as con:

@@ -1,4 +1,3 @@
-# analysis.py
 import sqlite3
 import pandas as pd
 import seaborn as sns
@@ -71,7 +70,6 @@ def orders_timeseries_figure(db_path: str, freq: str = "D"):
 def customers_network_figure(db_path: str, by: str = "city"):
     """
     функция построения простого граф: ребро между клиентами из одного города
-
     :param db_path:  путь к базе данных
     :param by: параметр групировки по умолчанию город
     :return: граф

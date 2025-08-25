@@ -124,7 +124,7 @@ class App(tk.Tk):
     #YES
     def refresh_customers(self):
         """
-        метод перезагрузки базы и вывода актуальной базы данных
+        Метод перезагрузки базы и вывода актуальной базы данных
         """
         for i in self.c_tree.get_children():
             self.c_tree.delete(i)
@@ -371,7 +371,7 @@ class App(tk.Tk):
     #YES
     def refresh_orders(self):
         """
-        обновляет таблицу виджета отображения заказов применя сортировку по дате, имени, email и статусу заказа клиента
+        Обновляет таблицу виджета отображения заказов применя сортировку по дате, имени, email и статусу заказа клиента
         """
         for i in self.o_tree.get_children(): #очищает предыдущий вывод
             self.o_tree.delete(i)
@@ -420,7 +420,7 @@ class App(tk.Tk):
         """
         Обработчик событий
         Формирование и вывод текста с подробностями заказа по двойном клике ПКМ
-        :param event: none gj evjkxfyb.
+        :param event: none по умолчанию
         :return: messagebox "Детали заказа"
         """
         sel = self.o_tree.selection()
@@ -431,9 +431,13 @@ class App(tk.Tk):
         details = "\n".join([f'- {i["product_name"]} x{i["quantity"]} = {i["subtotal"]:.2f}' for i in items])
         messagebox.showinfo("Детали заказа", f"Позиции заказа #{order_id}:\n{details}")
 
+    #YES
     # Вкладка аналитики
     def _build_analytics_tab(self):
-        #размещение виджетов на странице GUI
+        """
+        размещение виджетов на странице GUI
+        Returns:GUI
+        """
         frm = self.tab_analytics
         btns = ttk.Frame(frm)
         btns.pack(fill=tk.X, padx=8, pady=8)
@@ -480,8 +484,12 @@ class App(tk.Tk):
         fig = analysis.customers_network_figure(self.db_path, by="city")
         self._show_figure(fig)
 
-    # Администрирование
+    # Вкладка администрирование
     def _build_admin_tab(self):
+        """
+        Размещение виджетов на вкладке администрирование
+        Returns: GUI
+        """
         frm = self.tab_admin
         lbl = ttk.LabelFrame(frm, text="Импорт/Экспорт")
         lbl.pack(fill=tk.X, padx=8, pady=8)
@@ -495,7 +503,12 @@ class App(tk.Tk):
         lbl2.pack(fill=tk.X, padx=8, pady=8)
         ttk.Button(lbl2, text="Резервная копия БД", command=self.backup_db).pack(side=tk.LEFT, padx=6, pady=6)
 
+    #YES
     def export_csv(self):
+        """
+        Экспорт базы данных в .csv
+        Returns: файлы .csv
+        """
         try:
             folder = filedialog.askdirectory()
             if not folder:
@@ -505,7 +518,11 @@ class App(tk.Tk):
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
+    #YES
     def import_csv(self):
+        """
+        Импорт базы данных из .csv c возможность очистки ужу созданной базы данных
+        """
         try:
             folder = filedialog.askdirectory()
             if not folder:
@@ -517,7 +534,12 @@ class App(tk.Tk):
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
+    #YES
     def export_json(self):
+        """
+        Экспорт базы данных в .json
+        Returns: файл .json
+        """
         try:
             path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
             if not path:
@@ -527,7 +549,11 @@ class App(tk.Tk):
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
+    #YES
     def import_json(self):
+        """
+        Импорт базы данных из .json с возможностью предварительной очистки
+        """
         try:
             path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
             if not path:
@@ -539,7 +565,12 @@ class App(tk.Tk):
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
+    #YES
     def backup_db(self):
+        """
+        Сохранение базы данных (резервное копирование)
+        Returns: файл базы данных
+        """
         try:
             path = filedialog.asksaveasfilename(defaultextension=".db", filetypes=[("SQLite DB", "*.db")])
             if not path:
